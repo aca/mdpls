@@ -228,24 +228,33 @@ const requestListener = function(req: any, res: any) {
 <script src="https://cdn.jsdelivr.net/npm/morphdom@2.6.1/dist/morphdom.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/13.0.1/markdown-it.min.js" integrity="sha512-SYfDUYPg5xspsG6OOpXU366G8SZsdHOhqk/icdrYJ2E/WKZxPxze7d2HD3AyXpT7U22PZ5y74xRpqZ6A2bJ+kQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-
-<script>
-
-</script>
-
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-<style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js" integrity="sha512-vnRdmX8ZxbU+IhA2gLhZqXkX1neJISG10xy0iP0WauuClu3AIMknxyDjYHEpEhi8fTZPyOCWgqUCnEafDB/jVQ==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js" integrity="sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==" crossorigin="anonymous"></script>
 
+<script>
+</script>
+
+<style>
 ${customCSS}
-</style>
 
-<style>
-#mdText {
-    height: 100%;
-    weight: 100%;
+
+.focus {
+    background-color: #ff0000;
 }
+.focus::after {
+    background-color: #000000;
+    transition: background-color 1000ms linear;
+    -webkit-transition: background-color 1000ms linear;
+    -ms-transition: background-color 1000ms linear;
+}
+
+#mdText {
+    height: 100vh;
+    min-height: 100vh;
+}
+
 </style>
 
 
@@ -257,54 +266,99 @@ ${customCSS}
 
 <script>
 
-    var md = window.markdownit({
-      html: true,
-      linkify: true,
-      typographer: true
-    });
+let viz = new window.Viz();
+
+// let viz;
+// window.addEventListener("load", function(){
+// });
+//
+
+var md = window.markdownit({
+    html: true,
+    linkify: true,
+    typographer: true
+});
 
 const ws = new WebSocket('ws://localhost:9898/');
+
 ws.onopen = function() {
     console.log('WebSocket Client Connected');
-    ws.send('Hi this is web client.');
 };
 
-
 ws.onmessage = function(e) {
-  received = JSON.parse(e.data)
-  // if (e.data.action == "reload") {
-  //     window.location.reload();
-  // }
-  // document.querySelector('#mdText').innerHTML = md.render(received.text);
-  //
+    received = JSON.parse(e.data)
+    // if (e.data.action == "reload") {
+    //     window.location.reload();
+    // }
+    // document.querySelector('#mdText').innerHTML = md.render(received.text);
+    //
 
     let markdownBody = document.querySelector('#mdText')
     const morphdom = window.morphdom;
 
-    const diff = morphdom(
-    markdownBody,
-    "<div>" + md.render(received.text) + "<div>",
-    {
-      childrenOnly: true,
-      onBeforeElUpdated: (fromEl, toEl) => {
-        if (fromEl.hasAttribute('open')) {
-          toEl.setAttribute('open', 'true');
-        }
-        return !fromEl.isEqualNode(toEl);
-      },
-   onElUpdated: function(el) {
-       // console.log(el)
-       el.scrollIntoView()
 
-       // el.scrollTop = el.scrollHeight - el.clientHeight;
-    },
-      getNodeKey: () => null,
-    },
+    const diff = morphdom(
+        markdownBody,
+        "<div>" + md.render(received.text) + "<div>",
+        {
+            childrenOnly: true,
+            onBeforeElUpdated: (fromEl, toEl) => {
+                if (fromEl.hasAttribute('open')) {
+                    toEl.setAttribute('open', 'true');
+                }
+                // fromEl.classList.remove("focus")
+
+                if (fromEl.isEqualNode(toEl)) {
+                    return false;
+                } else {
+                    // console.log(fromEl)
+                    fromEl.scrollIntoView({
+                        behavior: 'auto',
+                        block: 'center',
+                        inline: 'center',
+                    })
+                    // toEl.classList.add("focus")
+                    // setTimeout(() => {
+                    //     toEl.classList.remove("focus")
+                    // }, 2000)
+                }
+
+
+
+                return true;
+            },
+            onElUpdated: function(el) {
+                // el.previousElementSibling.scrollIntoView()
+                // console.log(el.scrollTop, el.scrollHeight, el.clientHeight)
+                // el.scrollTop = el.scrollHeight - el.clientHeight;
+                
+                // if (el.classList.contains("language-graphviz")) {
+                //   let element = el
+                //   let parent = element.parentNode
+                //   let pparent = parent.parentNode
+                //   viz.renderSVGElement(element.textContent)
+                //   .then(function(element) {
+                //     element.setAttribute("width", "100%")
+                //     pparent.replaceChild(element, parent)
+                //   });
+                // }
+            },
+            onNodeAdded: function(el) {
+                console.log("added", el)
+
+                if(typeof el.scrollIntoView === 'function' ) {
+                    el.scrollIntoView({
+                        behavior: 'auto',
+                        block: 'center',
+                        inline: 'center',
+                    })
+                }
+            },
+            getNodeKey: () => null,
+        },
     );
 };
-
-  </script>
-
+</script>
 
 </body>
 </html>
@@ -312,29 +366,61 @@ ws.onmessage = function(e) {
     res.end(htmlString);
 };
 
+var MarkdownIt = require('markdown-it'),
+
 const server = http.createServer(requestListener);
 server.listen(8081);
 
 import { WebSocketServer } from "ws";
+
+
 const wss = new WebSocketServer({ port: 9898 });
 
 wss.on("connection", function connection(ws) {
     ws.on("message", function message(data) {
         console.log("received: %s", data);
     });
-    ws.send("start");
+    ws.send(
+        JSON.stringify({
+            action: "update",
+            text: documents.get(currentFocus)?.getText(),
+        })
+    )
 });
 
-documents.onDidChangeContent((change) => {
+let currentFocus = ""
+
+documents.onDidOpen((change) => {
+    currentFocus = change.document.uri
     wss.clients.forEach((client) => {
         client.send(
             JSON.stringify({
                 action: "update",
                 text: change.document.getText(),
+                uri: change.document.uri,
+            })
+        );
+    });
+})
+
+documents.onDidChangeContent((change) => {
+    currentFocus = change.document.uri
+    wss.clients.forEach((client) => {
+        client.send(
+            JSON.stringify({
+                action: "update",
+                text: change.document.getText(),
+                uri: change.document.uri,
             })
         );
     });
 });
+
+
+// ul > li p {
+//   margin-block-end: 0em !important;
+//   margin-block-start: 0em !important;
+// }
 
 var customCSS = `
 
@@ -377,12 +463,7 @@ h4 {
   font-weight: 400;
 }
 
-ul > li p {
-  margin-block-end: 0em !important;
-  margin-block-start: 0em !important;
-}
-
-main {
+body {
   background-color: #000000 !important;
 }
 

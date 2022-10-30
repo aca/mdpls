@@ -1,89 +1,33 @@
-# rerh1rrr333342
-wer
-wer
-rrrrrrr
-wer
-wer
-werwerwerwre
-basic implementation of lsp server
-this is something we should change
-ok 
+# this is hheader is changedeader 3this is wrong you know that added has changed
 
-wer
-werwerwer
+graphviz
+```graphviz
+digraph G {
 
+	subgraph cluster_0 {
+		style=filled;
+		color=lightgrey;
+		node [style=filled,color=white];
+		a0 -> a1 -> a2 -> a3;
+		label = "process #1";
+	}
 
+	subgraph cluster_1 {
+		node [style=filled];
+		b0 -> b1 -> b2 -> b3;
+		label = "process #2";
+		color=blue
+	}
+	start -> a0;
+	start -> b0;
+	a1 -> b3;
+	b2 -> a3;
+	a3 -> a0;
+	a3 -> end;
+	b3 -> end;
 
-
-
-
-
-
-
-
-
-
-
-
-wer
-> rwer
-
-werererrr
-wer
-rrrrrr
-werwer
-wer
-
-> wer asdasdasd
-
-werwer
-
-werwer
-
-
-werwerwer
-
-werwer
-
-werwer
-
-werwer
-
-
-
-
-
-
-
-
-> werwerwer
-
-## heo
-el.focus()
-    werwer
-
-    werwer
-    p
-    werwerwer
-
-    werwerwer
-
-    werwerwer
-
-
-# hello world
-
-    this is something amazing
-
-    hello this is something
-
-    hello world
-
-# kubespray
-
-    this is 
-
-# hrewr
-
-    werwer
-    werwer
+	start [shape=Mdiamond];
+	end [shape=Msquare];
+}
+```
+```

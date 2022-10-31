@@ -4,6 +4,7 @@ specifiers:
   '@types/markdown-it': ^12.2.3
   '@types/ws': ^8.5.3
   markdown-it: ^13.0.1
+  markdown-it-graphviz: ^1.1.2
   vscode-languageserver: ^7.0.0
   vscode-languageserver-textdocument: ^1.0.4
   ws: ^8.9.0
@@ -12,6 +13,7 @@ dependencies:
   '@types/markdown-it': 12.2.3
   '@types/ws': 8.5.3
   markdown-it: 13.0.1
+  markdown-it-graphviz: 1.1.2
   vscode-languageserver: 7.0.0
   vscode-languageserver-textdocument: 1.0.7
   ws: 8.10.0
@@ -56,6 +58,10 @@ packages:
     resolution: {integrity: sha512-C7bfi1UZmoj8+PQx22XyeXCuBlokoyWQL5pWSP+EI6nzRylyThouddufc2c1NDIcP9k5agmN9fLpA7VNJfIiqw==}
     dependencies:
       uc.micro: 1.0.6
+    dev: false
+
+  /markdown-it-graphviz/1.1.2:
+    resolution: {integrity: sha512-tO30MEOU9mAFMpQvJN72+b0MLP9hMwPK43no9cctEkM0jn3fgjnZxCaavB6IlvrV5Rz2spR+hyNP4zAfgPt9oA==}
     dev: false
 
   /markdown-it/13.0.1:

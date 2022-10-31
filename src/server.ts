@@ -266,13 +266,6 @@ ${customCSS}
 
 <script>
 
-let viz = new window.Viz();
-
-// let viz;
-// window.addEventListener("load", function(){
-// });
-//
-
 var md = window.markdownit({
     html: true,
     linkify: true,
@@ -292,14 +285,14 @@ ws.onmessage = function(e) {
     // }
     // document.querySelector('#mdText').innerHTML = md.render(received.text);
     //
-
+    
     let markdownBody = document.querySelector('#mdText')
-    const morphdom = window.morphdom;
 
+    const morphdom = window.morphdom;
 
     const diff = morphdom(
         markdownBody,
-        "<div>" + md.render(received.text) + "<div>",
+        "<div>" + received.text + "<div>",
         {
             childrenOnly: true,
             onBeforeElUpdated: (fromEl, toEl) => {
@@ -307,16 +300,17 @@ ws.onmessage = function(e) {
                     toEl.setAttribute('open', 'true');
                 }
                 // fromEl.classList.remove("focus")
-
+                
                 if (fromEl.isEqualNode(toEl)) {
                     return false;
                 } else {
-                    // console.log(fromEl)
+
                     fromEl.scrollIntoView({
                         behavior: 'auto',
                         block: 'center',
                         inline: 'center',
                     })
+
                     // toEl.classList.add("focus")
                     // setTimeout(() => {
                     //     toEl.classList.remove("focus")
@@ -331,21 +325,8 @@ ws.onmessage = function(e) {
                 // el.previousElementSibling.scrollIntoView()
                 // console.log(el.scrollTop, el.scrollHeight, el.clientHeight)
                 // el.scrollTop = el.scrollHeight - el.clientHeight;
-                
-                // if (el.classList.contains("language-graphviz")) {
-                //   let element = el
-                //   let parent = element.parentNode
-                //   let pparent = parent.parentNode
-                //   viz.renderSVGElement(element.textContent)
-                //   .then(function(element) {
-                //     element.setAttribute("width", "100%")
-                //     pparent.replaceChild(element, parent)
-                //   });
-                // }
             },
             onNodeAdded: function(el) {
-                console.log("added", el)
-
                 if(typeof el.scrollIntoView === 'function' ) {
                     el.scrollIntoView({
                         behavior: 'auto',
@@ -357,6 +338,20 @@ ws.onmessage = function(e) {
             getNodeKey: () => null,
         },
     );
+
+    try {
+        let viz = new window.Viz();
+        for (let element of markdownBody.getElementsByClassName("language-graphviz")) {
+          viz.renderSVGElement(element.textContent)
+          .then(function(newEl) {
+             newEl.setAttribute("width", "100%")
+             element.parentNode.replaceWith(newEl)
+          });
+        }
+    } catch (error){
+        console.error(error)
+    }
+
 };
 </script>
 
@@ -366,7 +361,7 @@ ws.onmessage = function(e) {
     res.end(htmlString);
 };
 
-var MarkdownIt = require('markdown-it'),
+var md = require('markdown-it')();
 
 const server = http.createServer(requestListener);
 server.listen(8081);
@@ -383,7 +378,7 @@ wss.on("connection", function connection(ws) {
     ws.send(
         JSON.stringify({
             action: "update",
-            text: documents.get(currentFocus)?.getText(),
+            text: md.render(documents.get(currentFocus)?.getText()),
         })
     )
 });
@@ -396,7 +391,7 @@ documents.onDidOpen((change) => {
         client.send(
             JSON.stringify({
                 action: "update",
-                text: change.document.getText(),
+                text: md.render(change.document.getText()),
                 uri: change.document.uri,
             })
         );
@@ -409,7 +404,7 @@ documents.onDidChangeContent((change) => {
         client.send(
             JSON.stringify({
                 action: "update",
-                text: change.document.getText(),
+                text: md.render(change.document.getText()),
                 uri: change.document.uri,
             })
         );

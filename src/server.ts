@@ -3,15 +3,11 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 import {
-    CompletionItem,
-    CompletionItemKind, createConnection, Diagnostic,
-    DiagnosticSeverity, DidChangeConfigurationNotification, InitializeParams, InitializeResult, ProposedFeatures, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind
+    createConnection, DidChangeConfigurationNotification, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments, TextDocumentSyncKind
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-// Create a connection for the server, using Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager.
@@ -86,20 +82,6 @@ let globalSettings: ExampleSettings = defaultSettings;
 // Cache the settings of all open documents
 const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
 
-connection.onDidChangeConfiguration((change) => {
-    if (hasConfigurationCapability) {
-        // Reset all cached document settings
-        documentSettings.clear();
-    } else {
-        globalSettings = <ExampleSettings>(
-            (change.settings.languageServerExample || defaultSettings)
-        );
-    }
-
-    // Revalidate all open text documents
-    documents.all().forEach(validateTextDocument);
-});
-
 function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
     if (!hasConfigurationCapability) {
         return Promise.resolve(globalSettings);
@@ -123,90 +105,9 @@ documents.onDidClose((e) => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 
-async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-    // In this simple example we get the settings for every validate run.
-    const settings = await getDocumentSettings(textDocument.uri);
-
-    // The validator creates diagnostics for all uppercase words length 2 and more
-    const text = textDocument.getText();
-    const pattern = /\b[A-Z]{2,}\b/g;
-    let m: RegExpExecArray | null;
-
-    let problems = 0;
-    const diagnostics: Diagnostic[] = [];
-    while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-        problems++;
-        const diagnostic: Diagnostic = {
-            severity: DiagnosticSeverity.Warning,
-            range: {
-                start: textDocument.positionAt(m.index),
-                end: textDocument.positionAt(m.index + m[0].length),
-            },
-            message: `${m[0]} is all uppercase.`,
-            source: "ex",
-        };
-        if (hasDiagnosticRelatedInformationCapability) {
-            diagnostic.relatedInformation = [
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnostic.range),
-                    },
-                    message: "Spelling matters",
-                },
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnostic.range),
-                    },
-                    message: "Particularly for names",
-                },
-            ];
-        }
-        diagnostics.push(diagnostic);
-    }
-
-    // Send the computed diagnostics to VSCode.
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-
 connection.onDidChangeWatchedFiles((_change) => {
     // Monitored files have change in VSCode
     connection.console.log("[XXX] We received an file change event");
-});
-
-// This handler provides the initial list of the completion items.
-connection.onCompletion(
-    (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-        // The pass parameter contains the position of the text document in
-        // which code complete got requested. For the example we ignore this
-        // info and always provide the same completion items.
-        return [
-            {
-                label: "TypeScript",
-                kind: CompletionItemKind.Text,
-                data: 1,
-            },
-            {
-                label: "JavaScript",
-                kind: CompletionItemKind.Text,
-                data: 2,
-            },
-        ];
-    }
-);
-
-// This handler resolves additional information for the item selected in
-// the completion list.
-connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
-    if (item.data === 1) {
-        item.detail = "TypeScript details";
-        item.documentation = "TypeScript documentation";
-    } else if (item.data === 2) {
-        item.detail = "JavaScript details";
-        item.documentation = "JavaScript documentation";
-    }
-    return item;
 });
 
 // Make the text document manager listen on the connection
@@ -225,7 +126,7 @@ const requestListener = function(req: any, res: any) {
     let htmlString = `<html>
 <head>
 <meta charset="utf-8">
-<script src="https://cdn.jsdelivr.net/npm/morphdom@2.6.1/dist/morphdom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/morphdom@2.6.1/dist/morphdom-umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/13.0.1/markdown-it.min.js" integrity="sha512-SYfDUYPg5xspsG6OOpXU366G8SZsdHOhqk/icdrYJ2E/WKZxPxze7d2HD3AyXpT7U22PZ5y74xRpqZ6A2bJ+kQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -280,11 +181,9 @@ ws.onopen = function() {
 
 ws.onmessage = function(e) {
     received = JSON.parse(e.data)
-    // if (e.data.action == "reload") {
-    //     window.location.reload();
-    // }
-    // document.querySelector('#mdText').innerHTML = md.render(received.text);
-    //
+    if (e.data.action == "reload") {
+        window.location.reload();
+    }
     
     let markdownBody = document.querySelector('#mdText')
 
@@ -299,43 +198,46 @@ ws.onmessage = function(e) {
                 if (fromEl.hasAttribute('open')) {
                     toEl.setAttribute('open', 'true');
                 }
-                // fromEl.classList.remove("focus")
+
+                // if (fromEl.classList.contains("language-graphviz")){
+                //     console.log("skipping graphviz")
+                //     return false;
+                // }
                 
                 if (fromEl.isEqualNode(toEl)) {
+                    console.log("scroll onBeforeElUpdated1", toEl)
                     return false;
                 } else {
-
+                    console.log("scroll onBeforeElUpdated2", fromEl)
                     fromEl.scrollIntoView({
                         behavior: 'auto',
                         block: 'center',
                         inline: 'center',
                     })
-
                     // toEl.classList.add("focus")
                     // setTimeout(() => {
                     //     toEl.classList.remove("focus")
                     // }, 2000)
+                    return true;
                 }
-
-
-
-                return true;
             },
             onElUpdated: function(el) {
-                // el.previousElementSibling.scrollIntoView()
+                console.log("scroll onElUpdated", el)
+                el.scrollIntoView()
                 // console.log(el.scrollTop, el.scrollHeight, el.clientHeight)
                 // el.scrollTop = el.scrollHeight - el.clientHeight;
             },
             onNodeAdded: function(el) {
-                if(typeof el.scrollIntoView === 'function' ) {
-                    el.scrollIntoView({
-                        behavior: 'auto',
-                        block: 'center',
-                        inline: 'center',
-                    })
-                }
+                // if(typeof el.scrollIntoView === 'function' ) {
+                //     console.log("scroll", el)
+                //     el.scrollIntoView({
+                //         behavior: 'auto',
+                //         block: 'center',
+                //         inline: 'center',
+                //     })
+                // }
             },
-            getNodeKey: () => null,
+            // getNodeKey: () => null,
         },
     );
 
@@ -351,7 +253,6 @@ ws.onmessage = function(e) {
     } catch (error){
         console.error(error)
     }
-
 };
 </script>
 
@@ -367,7 +268,6 @@ const server = http.createServer(requestListener);
 server.listen(8081);
 
 import { WebSocketServer } from "ws";
-
 
 const wss = new WebSocketServer({ port: 9898 });
 
